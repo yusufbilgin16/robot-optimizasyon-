@@ -1,4 +1,3 @@
-
 import streamlit as st
 from itertools import combinations
 from copy import deepcopy
@@ -6,7 +5,6 @@ import random
 
 st.set_page_config(page_title="Kalıp Optimizasyon", layout="centered")
 
-# Sayfa kontrolü
 if "sayfa" not in st.session_state:
     st.session_state.sayfa = 1
 if "robot_sayisi" not in st.session_state:
@@ -18,7 +16,6 @@ if "alan_y" not in st.session_state:
 if "kaliplar" not in st.session_state:
     st.session_state.kaliplar = []
 
-# ----------------------------- SAYFA 1 -----------------------------
 if st.session_state.sayfa == 1:
     st.title("🔧 1. Adım: Robot Bilgileri")
     st.session_state.robot_sayisi = st.number_input("Robot Sayısı", min_value=1, max_value=50, value=3)
@@ -27,12 +24,10 @@ if st.session_state.sayfa == 1:
 
     if st.button("İleri → Kalıp Bilgileri"):
         st.session_state.sayfa = 2
-        st.experimental_rerun()
+        st.stop()
 
-# ----------------------------- SAYFA 2 -----------------------------
 elif st.session_state.sayfa == 2:
     st.title("📦 2. Adım: Kalıp Bilgileri")
-
     kalip_sayisi = st.number_input("Toplam Kalıp Sayısı", min_value=1, max_value=200, value=6)
     st.session_state.kaliplar = []
 
@@ -49,12 +44,11 @@ elif st.session_state.sayfa == 2:
     col1, col2 = st.columns(2)
     if col1.button("← Geri"):
         st.session_state.sayfa = 1
-        st.experimental_rerun()
+        st.stop()
     if col2.button("İleri → Hesapla"):
         st.session_state.sayfa = 3
-        st.experimental_rerun()
+        st.stop()
 
-# ----------------------------- SAYFA 3 -----------------------------
 elif st.session_state.sayfa == 3:
     st.title("📊 3. Adım: Optimizasyon ve Sonuç")
 
@@ -140,4 +134,4 @@ elif st.session_state.sayfa == 3:
 
     if st.button("← Geri"):
         st.session_state.sayfa = 2
-        st.experimental_rerun()
+        st.stop()
