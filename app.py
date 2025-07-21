@@ -125,7 +125,7 @@ elif st.session_state.sayfa == 3:
         sonuc, bekleme = en_iyi_robot_yerlesimi(kaliplar, robot_sayisi, kombinasyonlar)
         if sonuc:
             toplam_uretim = 0
-            toplam_bekleme = 0
+            toplam_bekleme_sure = 0
             st.success(f"🔧 Toplam Bekleme Süresi: {bekleme:.2f} dakika (Optimizasyon için)")
             for i, (sol, sag) in enumerate(sonuc):
                 st.markdown(f"### 🤖 Robot {i+1}")
@@ -152,11 +152,11 @@ elif st.session_state.sayfa == 3:
                 toplam_robot_bekleme = toplam_bekleme_robot * cevrim_sayisi
 
                 toplam_uretim += toplam_robot_uretimi
-                toplam_bekleme += toplam_robot_bekleme
+                toplam_bekleme_sure += toplam_robot_bekleme
 
-                st.info(f"Çevrim Süresi: {cevrim_suresi} dk | Çevrim Başına Parça: {cevrim_parca_sayisi} | Toplam Üretim (9 saat): {toplam_robot_uretimi} | Toplam Bekleme (9 saat): {toplam_robot_bekleme} dk")
+                st.info(f"Çevrim Süresi: {cevrim_suresi} dk | Çevrim Başına Parça: {cevrim_parca_sayisi} | Toplam Çevrim Sayısı (9 saat): {cevrim_sayisi} | Toplam Üretim (9 saat): {toplam_robot_uretimi} | 9 Saatlik Toplam Bekleme: {toplam_robot_bekleme} dk")
 
-            st.success(f"🔹 Tüm Robotlar Toplam Üretimi (9 saat): {toplam_uretim} | Toplam Bekleme Süresi: {toplam_bekleme} dk")
+            st.success(f"🔹 Tüm Robotlar Toplam Üretimi (9 saat): {toplam_uretim} | Tüm Robotlar Toplam Bekleme Süresi (9 saat): {toplam_bekleme_sure} dk")
         else:
             st.warning("Uygun yerleşim bulunamadı. Daha fazla kalıp deneyin.")
 
