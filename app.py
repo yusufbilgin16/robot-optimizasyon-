@@ -89,16 +89,23 @@ elif st.session_state.sayfa == 3:
         en_iyi_cevrim_suresi = float('inf')
         en_iyi_sol = []
         en_iyi_sag = []
+
         sol_combos = uygun_kombinasyonlar(kalip_grubu, alan_x, alan_y)
         for sol in sol_combos:
             kalan2 = [k for k in kalip_grubu if k not in sol]
             sag_combos = uygun_kombinasyonlar(kalan2, alan_x, alan_y)
+            if not sag_combos:
+                sag_combos = [()]  # Sağ taraf boş olmasına izin ver
             for sag in sag_combos:
                 _, cevrim_suresi, _ = hesapla_cikti(sol, sag)
                 if cevrim_suresi < en_iyi_cevrim_suresi and cevrim_suresi > 0:
                     en_iyi_cevrim_suresi = cevrim_suresi
                     en_iyi_sol = sol
                     en_iyi_sag = sag
+
+        if not en_iyi_sol and kalip_grubu:
+            en_iyi_sol = [kalip_grubu[0]]  # En az 1 kalıp mutlaka atanacak
+
         if en_iyi_sol or en_iyi_sag:
             st.markdown("**Sol Kalıplar:**")
             for k in en_iyi_sol:
