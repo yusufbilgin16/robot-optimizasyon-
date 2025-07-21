@@ -74,8 +74,10 @@ elif st.session_state.sayfa == 3:
         cevrim_suresi = sol_weld + sag_weld + toplam_bekleme
         cevrim_parca = len(sol) + len(sag)
         cevrim_sayisi = int(540 // cevrim_suresi) if cevrim_suresi > 0 else 0
-        toplam_parca = cevrim_sayisi * cevrim_parca
-        return toplam_parca, cevrim_suresi, cevrim_parca, toplam_bekleme * cevrim_sayisi
+        kalip_bazli_adetler = {}
+        for k in sol + sag:
+            kalip_bazli_adetler[k['ad']] = cevrim_sayisi
+        return kalip_bazli_adetler, cevrim_suresi, toplam_bekleme * cevrim_sayisi
 
     kullanilan = set()
     robotlar = []
@@ -89,7 +91,7 @@ elif st.session_state.sayfa == 3:
             kalan2 = [k for k in kalan_kaliplar if k['id'] not in [s['id'] for s in sol]]
             sag_combos = uygun_kombinasyonlar(kalan2, alan_x, alan_y)
             for sag in sag_combos:
-                _, cevrim_suresi, _, _ = hesapla_cikti(sol, sag)
+                _, cevrim_suresi, _ = hesapla_cikti(sol, sag)
                 if cevrim_suresi < en_iyi_cevrim_suresi and cevrim_suresi > 0:
                     en_iyi_cevrim_suresi = cevrim_suresi
                     en_iyi_sol = sol
@@ -106,8 +108,12 @@ elif st.session_state.sayfa == 3:
         st.markdown("**Sağ Kalıplar:**")
         for k in sag:
             st.write(f"- {k['ad']} (Setup: {k['setup']} dk, Weld: {k['weld']} dk)")
-        toplam_parca, cevrim_suresi, cevrim_parca, toplam_bekleme = hesapla_cikti(sol, sag)
-        st.info(f"Çevrim Süresi: {cevrim_suresi:.1f} dk | Parça/Çevrim: {cevrim_parca} | 9 Saat Üretim: {toplam_parca} adet | 9 Saat Toplam Bekleme: {toplam_bekleme} dk")
+
+        kalip_bazli_adetler, cevrim_suresi, toplam_bekleme = hesapla_cikti(sol, sag)
+        st.info(f"Çevrim Süresi: {cevrim_suresi:.1f} dk")
+        for kalip, adet in kalip_bazli_adetler.items():
+            st.write(f"{kalip} = {adet} adet")
+        st.write(f"9 Saatte Robotun Bekleme Süresi: {toplam_bekleme} dk")
 
     if st.button("← Geri"):
         st.session_state.sayfa = 2
