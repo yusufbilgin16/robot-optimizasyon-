@@ -25,7 +25,7 @@ if st.session_state.sayfa == 1:
     if st.button("İleri → Kalıp Bilgileri"):
         if st.session_state.robot_sayisi and st.session_state.alan_x and st.session_state.alan_y:
             st.session_state.sayfa = 2
-            st.experimental_rerun()
+            st.stop()
         else:
             st.warning("Lütfen tüm bilgileri doldurun!")
 
@@ -48,11 +48,11 @@ elif st.session_state.sayfa == 2:
     col1, col2 = st.columns(2)
     if col1.button("← Geri"):
         st.session_state.sayfa = 1
-        st.experimental_rerun()
+        st.stop()
     if col2.button("İleri → Hesapla"):
         if len(st.session_state.kaliplar) >= 1:
             st.session_state.sayfa = 3
-            st.experimental_rerun()
+            st.stop()
         else:
             st.warning("En az 1 kalıp girmelisiniz!")
 
@@ -137,4 +137,4 @@ elif st.session_state.sayfa == 3:
 
     if st.button("← Geri"):
         st.session_state.sayfa = 2
-        st.experimental_rerun()
+        st.stop()
