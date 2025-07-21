@@ -2,36 +2,13 @@ import streamlit as st
 from itertools import combinations
 import copy
 
-# Sayfa ayarları ve özel CSS
-st.set_page_config(page_title="Maksimum Üretim Optimizasyonu", layout="wide")
-
-page_bg_img = '''
-<style>
-[data-testid="stAppViewContainer"] > .main {
-background-image: linear-gradient(to right, #ece9e6, #ffffff);
-background-size: cover;
-background-position: top left;
-background-repeat: no-repeat;
-background-attachment: fixed;
-}
-
-header {visibility: hidden;}
-footer {visibility: hidden;}
-</style>
-'''
-
-st.markdown(page_bg_img, unsafe_allow_html=True)
-
-st.markdown("# 🛠️ YUSUF BİLGİN")
-
-st.image("https://cdn-icons-png.flaticon.com/512/2942/2942836.png", width=80)
-st.markdown("---")
+st.set_page_config(page_title="Maksimum Üretim için En Kısa Çevrim Optimizasyonu", layout="centered")
 
 if "sayfa" not in st.session_state:
     st.session_state.sayfa = 1
 
 if st.session_state.sayfa == 1:
-    st.markdown("## 🔧 1. Adım: Robot Bilgileri")
+    st.title("🔧 1. Adım: Robot Bilgileri")
     robot_sayisi = st.number_input("Robot Sayısı", min_value=1)
     alan_x = st.number_input("Alan Genişliği (X mm)", min_value=1)
     alan_y = st.number_input("Alan Derinliği (Y mm)", min_value=1)
@@ -46,11 +23,11 @@ if st.session_state.sayfa == 1:
             st.warning("Lütfen tüm bilgileri doldurun!")
 
 elif st.session_state.sayfa == 2:
-    st.markdown("## 📦 2. Adım: Kalıp Bilgileri")
+    st.title("📦 2. Adım: Kalıp Bilgileri")
     kalip_sayisi = st.number_input("Kalıp Sayısı", min_value=1)
     kaliplar_list = []
     for i in range(kalip_sayisi):
-        st.subheader(f"📦 Kalıp {i+1}")
+        st.subheader(f"Kalıp {i+1}")
         ad = st.text_input("Ad", key=f"ad_{i}")
         x = st.number_input("X (mm)", min_value=1.0, key=f"x_{i}")
         y = st.number_input("Y (mm)", min_value=1.0, key=f"y_{i}")
@@ -72,7 +49,7 @@ elif st.session_state.sayfa == 2:
             st.warning("En az bir kalıp adı giriniz!")
 
 elif st.session_state.sayfa == 3:
-    st.markdown("## 📊 3. Adım: Üretim Sonuçları")
+    st.title("📊 3. Adım: Maksimum Üretim Sonuçları")
     kaliplar = copy.deepcopy(st.session_state.kaliplar)
     robot_sayisi = st.session_state.robot_sayisi
     alan_x = st.session_state.alan_x
@@ -95,6 +72,7 @@ elif st.session_state.sayfa == 3:
         bekleme_soldan = max(0, sag_setup - sol_weld)
         toplam_bekleme = bekleme_sagdan + bekleme_soldan
         cevrim_suresi = sol_weld + sag_weld + toplam_bekleme
+        cevrim_parca = len(sol) + len(sag)
         cevrim_sayisi = int(540 // cevrim_suresi) if cevrim_suresi > 0 else 0
         kalip_bazli_adetler = {}
         for k in sol + sag:
@@ -124,7 +102,6 @@ elif st.session_state.sayfa == 3:
 
     for idx, (sol, sag) in enumerate(robotlar, 1):
         st.markdown(f"### 🤖 Robot {idx}")
-        st.image("https://cdn-icons-png.flaticon.com/512/2244/2244184.png", width=40)
         st.markdown("**Sol Kalıplar:**")
         for k in sol:
             st.write(f"- {k['ad']} (Setup: {k['setup']} dk, Weld: {k['weld']} dk)")
@@ -133,12 +110,10 @@ elif st.session_state.sayfa == 3:
             st.write(f"- {k['ad']} (Setup: {k['setup']} dk, Weld: {k['weld']} dk)")
 
         kalip_bazli_adetler, cevrim_suresi, toplam_bekleme = hesapla_cikti(sol, sag)
-        st.success(f"Çevrim Süresi: {cevrim_suresi:.1f} dk")
+        st.info(f"Çevrim Süresi: {cevrim_suresi:.1f} dk")
         for kalip, adet in kalip_bazli_adetler.items():
-            st.write(f"✅ {kalip} = {adet} adet")
-        st.warning(f"🕒 9 Saatte Robotun Bekleme Süresi: {toplam_bekleme} dk")
-
-    st.image("https://cdn-icons-png.flaticon.com/512/1006/1006555.png", width=80)
+            st.write(f"{kalip} = {adet} adet")
+        st.write(f"9 Saatte Robotun Bekleme Süresi: {toplam_bekleme} dk")
 
     if st.button("← Geri"):
         st.session_state.sayfa = 2
