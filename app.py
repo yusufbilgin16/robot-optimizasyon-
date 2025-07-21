@@ -81,10 +81,8 @@ elif st.session_state.sayfa == 3:
     def dengeli_dagilim(kaliplar, robot_sayisi):
         kaliplar_sorted = sorted(kaliplar, key=lambda k: k['setup'] + k['weld'])
         robotlara = [[] for _ in range(robot_sayisi)]
-        idx = 0
-        while kaliplar_sorted:
-            robotlara[idx % robot_sayisi].append(kaliplar_sorted.pop(0))
-            idx += 1
+        for idx, kalip in enumerate(kaliplar_sorted):
+            robotlara[idx % robot_sayisi].append(kalip)
         return robotlara
 
     robot_kaliplari = dengeli_dagilim(kaliplar, robot_sayisi)
@@ -119,6 +117,8 @@ elif st.session_state.sayfa == 3:
             for kalip, adet in kalip_bazli_adetler.items():
                 st.write(f"{kalip} = {adet} adet")
             st.write(f"9 Saatte Robotun Bekleme Süresi: {toplam_bekleme:.1f} dk")
+        else:
+            st.warning("❗ Bu robot için uygun kalıp kombinasyonu bulunamadı.")
 
     if st.button("← Geri"):
         st.session_state.sayfa = 2
