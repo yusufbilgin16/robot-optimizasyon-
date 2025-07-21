@@ -72,23 +72,26 @@ elif st.session_state.sayfa == 3:
         bekleme_soldan = max(0, sag_setup - sol_weld)
         toplam_bekleme = bekleme_sagdan + bekleme_soldan
         cevrim_suresi = sol_weld + sag_weld + toplam_bekleme
-        cevrim_parca = len(sol) + len(sag)
         cevrim_sayisi = int(540 // cevrim_suresi) if cevrim_suresi > 0 else 0
         kalip_bazli_adetler = {}
         for k in sol + sag:
             kalip_bazli_adetler[k['ad']] = cevrim_sayisi
         return kalip_bazli_adetler, cevrim_suresi, toplam_bekleme * cevrim_sayisi
 
-    kullanilan = set()
-    robotlar = []
-    for r in range(robot_sayisi):
+    # Dengeli Kalıp Dağılımı
+    kaliplar_sorted = sorted(kaliplar, key=lambda k: k['setup'] + k['weld'], reverse=True)
+    robot_kaliplari = [[] for _ in range(robot_sayisi)]
+    for idx, kalip in enumerate(kaliplar_sorted):
+        robot_kaliplari[idx % robot_sayisi].append(kalip)
+
+    for idx, kalip_grubu in enumerate(robot_kaliplari, 1):
+        st.markdown(f"### 🤖 Robot {idx}")
         en_iyi_cevrim_suresi = float('inf')
         en_iyi_sol = []
         en_iyi_sag = []
-        kalan_kaliplar = [k for k in kaliplar if k['id'] not in kullanilan]
-        sol_combos = uygun_kombinasyonlar(kalan_kaliplar, alan_x, alan_y)
+        sol_combos = uygun_kombinasyonlar(kalip_grubu, alan_x, alan_y)
         for sol in sol_combos:
-            kalan2 = [k for k in kalan_kaliplar if k['id'] not in [s['id'] for s in sol]]
+            kalan2 = [k for k in kalip_grubu if k not in sol]
             sag_combos = uygun_kombinasyonlar(kalan2, alan_x, alan_y)
             for sag in sag_combos:
                 _, cevrim_suresi, _ = hesapla_cikti(sol, sag)
@@ -97,23 +100,20 @@ elif st.session_state.sayfa == 3:
                     en_iyi_sol = sol
                     en_iyi_sag = sag
         if en_iyi_sol or en_iyi_sag:
-            kullanilan.update([k['id'] for k in en_iyi_sol + en_iyi_sag])
-            robotlar.append((en_iyi_sol, en_iyi_sag))
+            st.markdown("**Sol Kalıplar:**")
+            for k in en_iyi_sol:
+                st.write(f"- {k['ad']} (Setup: {k['setup']} dk, Weld: {k['weld']} dk)")
+            st.markdown("**Sağ Kalıplar:**")
+            for k in en_iyi_sag:
+                st.write(f"- {k['ad']} (Setup: {k['setup']} dk, Weld: {k['weld']} dk)")
 
-    for idx, (sol, sag) in enumerate(robotlar, 1):
-        st.markdown(f"### 🤖 Robot {idx}")
-        st.markdown("**Sol Kalıplar:**")
-        for k in sol:
-            st.write(f"- {k['ad']} (Setup: {k['setup']} dk, Weld: {k['weld']} dk)")
-        st.markdown("**Sağ Kalıplar:**")
-        for k in sag:
-            st.write(f"- {k['ad']} (Setup: {k['setup']} dk, Weld: {k['weld']} dk)")
-
-        kalip_bazli_adetler, cevrim_suresi, toplam_bekleme = hesapla_cikti(sol, sag)
-        st.info(f"Çevrim Süresi: {cevrim_suresi:.1f} dk")
-        for kalip, adet in kalip_bazli_adetler.items():
-            st.write(f"{kalip} = {adet} adet")
-        st.write(f"9 Saatte Robotun Bekleme Süresi: {toplam_bekleme} dk")
+            kalip_bazli_adetler, cevrim_suresi, toplam_bekleme = hesapla_cikti(en_iyi_sol, en_iyi_sag)
+            st.info(f"Çevrim Süresi: {cevrim_suresi:.1f} dk")
+            for kalip, adet in kalip_bazli_adetler.items():
+                st.write(f"{kalip} = {adet} adet")
+            st.write(f"9 Saatte Robotun Bekleme Süresi: {toplam_bekleme:.1f} dk")
+        else:
+            st.warning("❗ Bu robot için uygun kalıp kombinasyonu bulunamadı.")
 
     if st.button("← Geri"):
         st.session_state.sayfa = 2
