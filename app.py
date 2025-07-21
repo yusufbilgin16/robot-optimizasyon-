@@ -2,7 +2,7 @@ import streamlit as st
 from itertools import combinations
 import copy
 
-st.set_page_config(page_title="Maksimum Üretim için Dengeli Dağılımlı Optimizasyon", layout="centered")
+st.set_page_config(page_title="Maksimum Üretim için Dengeli ve Verimli Dağılım", layout="centered")
 
 if "sayfa" not in st.session_state:
     st.session_state.sayfa = 1
@@ -78,16 +78,16 @@ elif st.session_state.sayfa == 3:
             kalip_bazli_adetler[k['ad']] = cevrim_sayisi
         return kalip_bazli_adetler, cevrim_suresi, toplam_bekleme * cevrim_sayisi
 
-    def paylastir_dengeli(kaliplar, robot_sayisi):
-        kalan_kaliplar = kaliplar.copy()
+    def dengeli_ve_verimli_dagitim(kaliplar, robot_sayisi):
+        kaliplar_sorted = sorted(kaliplar, key=lambda k: k['setup'] + k['weld'])
         robotlara = [[] for _ in range(robot_sayisi)]
         idx = 0
-        while kalan_kaliplar:
-            robotlara[idx % robot_sayisi].append(kalan_kaliplar.pop(0))
+        for kalip in kaliplar_sorted:
+            robotlara[idx % robot_sayisi].append(kalip)
             idx += 1
         return robotlara
 
-    robot_kaliplari = paylastir_dengeli(kaliplar, robot_sayisi)
+    robot_kaliplari = dengeli_ve_verimli_dagitim(kaliplar, robot_sayisi)
 
     for idx, kalip_grubu in enumerate(robot_kaliplari, 1):
         if not kalip_grubu:
