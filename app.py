@@ -1,7 +1,8 @@
 import streamlit as st
 from itertools import combinations
+import copy
 
-st.set_page_config(page_title="Kalıp Optimizasyon", layout="centered")
+st.set_page_config(page_title="Maksimum Üretim Optimizasyonu", layout="centered")
 
 if "sayfa" not in st.session_state:
     st.session_state.sayfa = 1
@@ -48,8 +49,8 @@ elif st.session_state.sayfa == 2:
             st.warning("En az bir kalıp adı giriniz!")
 
 elif st.session_state.sayfa == 3:
-    st.title("📊 3. Adım: Optimizasyon ve Sonuç")
-    kaliplar = st.session_state.kaliplar
+    st.title("📊 3. Adım: Optimum Üretim Sonuçları")
+    kaliplar = copy.deepcopy(st.session_state.kaliplar)
     robot_sayisi = st.session_state.robot_sayisi
     alan_x = st.session_state.alan_x
     alan_y = st.session_state.alan_y
@@ -60,25 +61,42 @@ elif st.session_state.sayfa == 3:
             for combo in combinations(kaliplar, r):
                 if sum(k['x'] for k in combo) <= alan_x and max(k['y'] for k in combo) <= alan_y:
                     uygun.append(combo)
-        uygun.sort(key=lambda c: -len(c))
         return uygun
 
-    kullanilan_idler = set()
+    def hesapla_cikti(sol, sag):
+        sol_setup = sum(k['setup'] for k in sol)
+        sol_weld = sum(k['weld'] for k in sol)
+        sag_setup = sum(k['setup'] for k in sag)
+        sag_weld = sum(k['weld'] for k in sag)
+        bekleme_sagdan = max(0, sol_setup - sag_weld)
+        bekleme_soldan = max(0, sag_setup - sol_weld)
+        toplam_bekleme = bekleme_sagdan + bekleme_soldan
+        cevrim_suresi = sol_weld + sag_weld + toplam_bekleme
+        cevrim_parca = len(sol) + len(sag)
+        cevrim_sayisi = int(540 // cevrim_suresi) if cevrim_suresi > 0 else 0
+        toplam_parca = cevrim_sayisi * cevrim_parca
+        return toplam_parca, cevrim_suresi, cevrim_parca, toplam_bekleme * cevrim_sayisi
+
+    kullanilan = set()
     robotlar = []
-    for i in range(robot_sayisi):
-        kalan_kaliplar = [k for k in kaliplar if k['id'] not in kullanilan_idler]
-        sol_kombolar = uygun_kombinasyonlar(kalan_kaliplar, alan_x, alan_y)
-        if not sol_kombolar:
-            break
-        sol = sol_kombolar[0]
-        kullanilan_idler.update(k['id'] for k in sol)
-
-        kalan_kaliplar = [k for k in kaliplar if k['id'] not in kullanilan_idler]
-        sag_kombolar = uygun_kombinasyonlar(kalan_kaliplar, alan_x, alan_y)
-        sag = sag_kombolar[0] if sag_kombolar else []
-        kullanilan_idler.update(k['id'] for k in sag)
-
-        robotlar.append((sol, sag))
+    for r in range(robot_sayisi):
+        en_iyi_sonuc = 0
+        en_iyi_sol = []
+        en_iyi_sag = []
+        kalan_kaliplar = [k for k in kaliplar if k['id'] not in kullanilan]
+        sol_combos = uygun_kombinasyonlar(kalan_kaliplar, alan_x, alan_y)
+        for sol in sol_combos:
+            kalan2 = [k for k in kalan_kaliplar if k['id'] not in [s['id'] for s in sol]]
+            sag_combos = uygun_kombinasyonlar(kalan2, alan_x, alan_y)
+            for sag in sag_combos:
+                toplam_parca, _, _, _ = hesapla_cikti(sol, sag)
+                if toplam_parca > en_iyi_sonuc:
+                    en_iyi_sonuc = toplam_parca
+                    en_iyi_sol = sol
+                    en_iyi_sag = sag
+        if en_iyi_sol or en_iyi_sag:
+            kullanilan.update([k['id'] for k in en_iyi_sol + en_iyi_sag])
+            robotlar.append((en_iyi_sol, en_iyi_sag))
 
     for idx, (sol, sag) in enumerate(robotlar, 1):
         st.markdown(f"### 🤖 Robot {idx}")
@@ -88,22 +106,8 @@ elif st.session_state.sayfa == 3:
         st.markdown("**Sağ Kalıplar:**")
         for k in sag:
             st.write(f"- {k['ad']} (Setup: {k['setup']} dk, Weld: {k['weld']} dk)")
-
-        sol_setup = sum(k['setup'] for k in sol)
-        sol_weld = sum(k['weld'] for k in sol)
-        sag_setup = sum(k['setup'] for k in sag)
-        sag_weld = sum(k['weld'] for k in sag)
-
-        bekleme_sagdan = max(0, sol_setup - sag_weld)
-        bekleme_soldan = max(0, sag_setup - sol_weld)
-        toplam_bekleme = bekleme_sagdan + bekleme_soldan
-
-        cevrim_suresi = sol_weld + sag_weld + toplam_bekleme
-        cevrim_parca = len(sol) + len(sag)
-        cevrim_sayisi = int(540 // cevrim_suresi) if cevrim_suresi > 0 else 0
-        toplam_parca = cevrim_sayisi * cevrim_parca
-
-        st.info(f"Çevrim Süresi: {cevrim_suresi:.1f} dk | Parça/Çevrim: {cevrim_parca} | 9 Saat Üretim: {toplam_parca} adet | 9 Saat Toplam Bekleme: {toplam_bekleme * cevrim_sayisi} dk")
+        toplam_parca, cevrim_suresi, cevrim_parca, toplam_bekleme = hesapla_cikti(sol, sag)
+        st.info(f"Çevrim Süresi: {cevrim_suresi:.1f} dk | Parça/Çevrim: {cevrim_parca} | 9 Saat Üretim: {toplam_parca} adet | 9 Saat Toplam Bekleme: {toplam_bekleme} dk")
 
     if st.button("← Geri"):
         st.session_state.sayfa = 2
