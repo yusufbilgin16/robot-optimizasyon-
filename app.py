@@ -78,9 +78,9 @@ elif st.session_state.sayfa == 3:
             kalip_bazli_adetler[k['ad']] = cevrim_sayisi
         return kalip_bazli_adetler, cevrim_suresi, toplam_bekleme * cevrim_sayisi
 
-    # Dengeli Kalıp Dağılımı
     kaliplar_sorted = sorted(kaliplar, key=lambda k: k['setup'] + k['weld'], reverse=True)
     robot_kaliplari = [[] for _ in range(robot_sayisi)]
+
     for idx, kalip in enumerate(kaliplar_sorted):
         robot_kaliplari[idx % robot_sayisi].append(kalip)
 
