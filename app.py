@@ -2,7 +2,7 @@ import streamlit as st
 from itertools import combinations
 import copy
 
-st.set_page_config(page_title="Maksimum Üretim Optimizasyonu", layout="centered")
+st.set_page_config(page_title="Maksimum Üretim için En Kısa Çevrim Optimizasyonu", layout="centered")
 
 if "sayfa" not in st.session_state:
     st.session_state.sayfa = 1
@@ -49,7 +49,7 @@ elif st.session_state.sayfa == 2:
             st.warning("En az bir kalıp adı giriniz!")
 
 elif st.session_state.sayfa == 3:
-    st.title("📊 3. Adım: Optimum Üretim Sonuçları")
+    st.title("📊 3. Adım: Maksimum Üretim Sonuçları")
     kaliplar = copy.deepcopy(st.session_state.kaliplar)
     robot_sayisi = st.session_state.robot_sayisi
     alan_x = st.session_state.alan_x
@@ -80,7 +80,7 @@ elif st.session_state.sayfa == 3:
     kullanilan = set()
     robotlar = []
     for r in range(robot_sayisi):
-        en_iyi_sonuc = 0
+        en_iyi_cevrim_suresi = float('inf')
         en_iyi_sol = []
         en_iyi_sag = []
         kalan_kaliplar = [k for k in kaliplar if k['id'] not in kullanilan]
@@ -89,9 +89,9 @@ elif st.session_state.sayfa == 3:
             kalan2 = [k for k in kalan_kaliplar if k['id'] not in [s['id'] for s in sol]]
             sag_combos = uygun_kombinasyonlar(kalan2, alan_x, alan_y)
             for sag in sag_combos:
-                toplam_parca, _, _, _ = hesapla_cikti(sol, sag)
-                if toplam_parca > en_iyi_sonuc:
-                    en_iyi_sonuc = toplam_parca
+                _, cevrim_suresi, _, _ = hesapla_cikti(sol, sag)
+                if cevrim_suresi < en_iyi_cevrim_suresi and cevrim_suresi > 0:
+                    en_iyi_cevrim_suresi = cevrim_suresi
                     en_iyi_sol = sol
                     en_iyi_sag = sag
         if en_iyi_sol or en_iyi_sag:
