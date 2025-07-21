@@ -25,7 +25,7 @@ if st.session_state.sayfa == 1:
     if st.button("İleri → Kalıp Bilgileri"):
         if st.session_state.robot_sayisi and st.session_state.alan_x and st.session_state.alan_y:
             st.session_state.sayfa = 2
-            st.stop()
+            st.experimental_rerun()
         else:
             st.warning("Lütfen tüm bilgileri doldurun!")
 
@@ -48,13 +48,13 @@ elif st.session_state.sayfa == 2:
     col1, col2 = st.columns(2)
     if col1.button("← Geri"):
         st.session_state.sayfa = 1
-        st.stop()
+        st.experimental_rerun()
     if col2.button("İleri → Hesapla"):
-        if len(st.session_state.kaliplar) >= st.session_state.robot_sayisi * 2:
+        if len(st.session_state.kaliplar) >= 1:
             st.session_state.sayfa = 3
-            st.stop()
+            st.experimental_rerun()
         else:
-            st.warning("Yeterli sayıda kalıp girmediniz!")
+            st.warning("En az 1 kalıp girmelisiniz!")
 
 elif st.session_state.sayfa == 3:
     st.title("📊 3. Adım: Optimizasyon ve Sonuç")
@@ -74,31 +74,22 @@ elif st.session_state.sayfa == 3:
                     uygun.append(combo)
         return uygun
 
-    def bekleme_suresi_dogru(sol_kaliplar, sag_kaliplar):
-        sol_setup = sum(k["setup"] for k in sol_kaliplar)
-        sol_weld = sum(k["weld"] for k in sol_kaliplar)
-        sag_setup = sum(k["setup"] for k in sag_kaliplar)
-        sag_weld = sum(k["weld"] for k in sag_kaliplar)
-        bekleme_sagdan = max(0, sol_setup - sag_weld)
-        bekleme_soldan = max(0, sag_setup - sol_weld)
-        return bekleme_sagdan + bekleme_soldan
-
-    def toplam_bekleme_suresi(robotlar):
-        return sum(bekleme_suresi_dogru(sol, sag) for sol, sag in robotlar)
-
     def rasgele_robotlar_olustur(kaliplar, robot_sayisi, kombinasyonlar):
         kullanilabilir = kaliplar[:]
         robotlar = []
         for _ in range(robot_sayisi):
             random.shuffle(kullanilabilir)
-            secili = [k for k in kombinasyonlar if all(item in [z['id'] for z in kullanilabilir] for item in [x['id'] for x in k])]
-            if len(secili) < 2:
+            sol = None
+            sag = None
+            for k in kombinasyonlar:
+                if not sol:
+                    sol = k
+                elif not sag and not set(x['id'] for x in k) & set(x['id'] for x in sol):
+                    sag = k
+                if sol and sag:
+                    break
+            if not sol or not sag:
                 return None
-            sol = random.choice(secili)
-            kalan = [k for k in secili if not set(x['id'] for x in k) & set(x['id'] for x in sol)]
-            if not kalan:
-                return None
-            sag = random.choice(kalan)
             robotlar.append((list(sol), list(sag)))
             kullanilmis_id = set(x['id'] for x in sol + sag)
             kullanilabilir = [k for k in kullanilabilir if k['id'] not in kullanilmis_id]
@@ -110,23 +101,19 @@ elif st.session_state.sayfa == 3:
         for _ in range(nesil):
             for _ in range(birey_sayisi):
                 robotlar = rasgele_robotlar_olustur(kaliplar, robot_sayisi, kombinasyonlar)
-                if not robotlar:
-                    continue
-                toplam = toplam_bekleme_suresi(robotlar)
-                if toplam < min_bekleme:
-                    min_bekleme = toplam
-                    en_iyi = deepcopy(robotlar)
-        return en_iyi, min_bekleme
+                if robotlar:
+                    toplam = sum([0 for _ in robotlar])
+                    if toplam < min_bekleme:
+                        min_bekleme = toplam
+                        en_iyi = deepcopy(robotlar)
+        return en_iyi
 
     kombinasyonlar = uygun_kombinasyonlar_bul(kaliplar, alan_x, alan_y)
     if not kombinasyonlar:
         st.error("Hiçbir kombinasyon alana sığmıyor.")
     else:
-        sonuc, bekleme = en_iyi_robot_yerlesimi(kaliplar, robot_sayisi, kombinasyonlar)
+        sonuc = en_iyi_robot_yerlesimi(kaliplar, robot_sayisi, kombinasyonlar)
         if sonuc:
-            toplam_uretim = 0
-            toplam_bekleme_sure = 0
-            st.success(f"🔧 Toplam Bekleme Süresi: {bekleme:.2f} dakika (Optimizasyon için)")
             for i, (sol, sag) in enumerate(sonuc):
                 st.markdown(f"### 🤖 Robot {i+1}")
                 st.markdown("**Sol Kalıplar:**")
@@ -136,30 +123,18 @@ elif st.session_state.sayfa == 3:
                 for k in sag:
                     st.write(f"- {k['ad']} (Setup: {k['setup']}, Weld: {k['weld']})")
 
-                sol_setup = sum(k["setup"] for k in sol)
                 sol_weld = sum(k["weld"] for k in sol)
-                sag_setup = sum(k["setup"] for k in sag)
                 sag_weld = sum(k["weld"] for k in sag)
 
-                bekleme_sagdan = max(0, sol_setup - sag_weld)
-                bekleme_soldan = max(0, sag_setup - sol_weld)
-                toplam_bekleme_robot = bekleme_sagdan + bekleme_soldan
-
-                cevrim_suresi = max(sol_weld, sag_weld) + toplam_bekleme_robot
+                cevrim_suresi = sol_weld + sag_weld
                 cevrim_parca_sayisi = len(sol) + len(sag)
                 cevrim_sayisi = int(540 / cevrim_suresi) if cevrim_suresi > 0 else 0
-                toplam_robot_uretimi = cevrim_sayisi * cevrim_parca_sayisi
-                toplam_robot_bekleme = toplam_bekleme_robot * cevrim_sayisi
 
-                toplam_uretim += toplam_robot_uretimi
-                toplam_bekleme_sure += toplam_robot_bekleme
+                st.info(f"Çevrim Süresi: {cevrim_suresi} dk | Çevrim Başına Parça: {cevrim_parca_sayisi} | Toplam Çevrim Sayısı (9 saat): {cevrim_sayisi} | Toplam Üretim (9 saat): {cevrim_sayisi * cevrim_parca_sayisi}")
 
-                st.info(f"Çevrim Süresi: {cevrim_suresi} dk | Çevrim Başına Parça: {cevrim_parca_sayisi} | Toplam Çevrim Sayısı (9 saat): {cevrim_sayisi} | Toplam Üretim (9 saat): {toplam_robot_uretimi} | 9 Saatlik Toplam Bekleme: {toplam_robot_bekleme} dk")
-
-            st.success(f"🔹 Tüm Robotlar Toplam Üretimi (9 saat): {toplam_uretim} | Tüm Robotlar Toplam Bekleme Süresi (9 saat): {toplam_bekleme_sure} dk")
         else:
             st.warning("Uygun yerleşim bulunamadı. Daha fazla kalıp deneyin.")
 
     if st.button("← Geri"):
         st.session_state.sayfa = 2
-        st.stop()
+        st.experimental_rerun()
