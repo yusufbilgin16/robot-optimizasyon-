@@ -2,7 +2,7 @@ import streamlit as st
 from itertools import combinations
 import copy
 
-st.set_page_config(page_title="Maksimum Üretim için Dengeli ve Verimli Dağılım", layout="centered")
+st.set_page_config(page_title="Maksimum Üretim için Dengeli Optimizasyon", layout="centered")
 
 if "sayfa" not in st.session_state:
     st.session_state.sayfa = 1
@@ -78,16 +78,16 @@ elif st.session_state.sayfa == 3:
             kalip_bazli_adetler[k['ad']] = cevrim_sayisi
         return kalip_bazli_adetler, cevrim_suresi, toplam_bekleme * cevrim_sayisi
 
-    def dengeli_ve_verimli_dagitim(kaliplar, robot_sayisi):
+    def dengeli_dagilim(kaliplar, robot_sayisi):
         kaliplar_sorted = sorted(kaliplar, key=lambda k: k['setup'] + k['weld'])
         robotlara = [[] for _ in range(robot_sayisi)]
         idx = 0
-        for kalip in kaliplar_sorted:
-            robotlara[idx % robot_sayisi].append(kalip)
+        while kaliplar_sorted:
+            robotlara[idx % robot_sayisi].append(kaliplar_sorted.pop(0))
             idx += 1
         return robotlara
 
-    robot_kaliplari = dengeli_ve_verimli_dagitim(kaliplar, robot_sayisi)
+    robot_kaliplari = dengeli_dagilim(kaliplar, robot_sayisi)
 
     for idx, kalip_grubu in enumerate(robot_kaliplari, 1):
         if not kalip_grubu:
@@ -118,7 +118,7 @@ elif st.session_state.sayfa == 3:
             st.info(f"Çevrim Süresi: {cevrim_suresi:.1f} dk")
             for kalip, adet in kalip_bazli_adetler.items():
                 st.write(f"{kalip} = {adet} adet")
-            st.write(f"9 Saatte Robotun Bekleme Süresi: {toplam_bekleme} dk")
+            st.write(f"9 Saatte Robotun Bekleme Süresi: {toplam_bekleme:.1f} dk")
 
     if st.button("← Geri"):
         st.session_state.sayfa = 2
